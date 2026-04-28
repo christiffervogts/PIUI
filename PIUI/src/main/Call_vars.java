@@ -1,29 +1,84 @@
 package main;
 
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
+import java.util.*;
 
-public class Call_vars {
+import javax.swing.*;
 
-	public String user;
-	public String location;
-	public String password;
+public class Call_vars implements ActionListener{
 	
+	public String users;
+	public String locations;
+	public String passwords;
+	
+	public String user_name, location_name, password_name;
+	
+	public int user_index, location_index, password_index, state;
+	public ArrayList<String> user = new ArrayList<>();
+	public ArrayList<String> location = new ArrayList<>();
+	public ArrayList<String> password = new ArrayList<>();
+		
+	JFrame window = new JFrame("Login");
+	
+	JButton new_user = new JButton("Add a User");
+	JButton confirm_user = new JButton("Confirm?");
+	JButton confirm_location = new JButton("Confirm?");
+	JButton confirm_password = new JButton("Confirm?");
+
+	JLabel ues = new JLabel("Pick a user");
+	
+	JComboBox<String> user_box = new JComboBox<>();
+	JComboBox<String> location_box = new JComboBox<>();
+	JComboBox<String> password_box = new JComboBox<>();
+
 	BufferedReader br;
 	BufferedWriter bw;
 	
 	public Call_vars() {
+		opening_stuff();
 		if(!check_for_save()) {
 			make_save();
 		}
+		else {
+			pick_user();
+			window.repaint();
+		}
+	}
+	public void opening_stuff() {
+		window.setSize(Toolkit.getDefaultToolkit().getScreenSize().width/2, Toolkit.getDefaultToolkit().getScreenSize().height/2);
+		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		window.setLocationRelativeTo(null);
+		window.setResizable(false);
+		window.setLayout(null);
+		window.setVisible(true);
 	}
 	public boolean check_for_save() {
+		
 		try {
 			br = new BufferedReader(new FileReader("Saves.txt"));
 			
 			try {
-				user = br.readLine();
-				location = br.readLine();
-				password = br.readLine();
+				users = br.readLine();
+				user = new ArrayList<>(Arrays.asList(users.split(",")));
+				user.add(0, "---Selcet---");
+				for(String u : user) {
+				    user_box.addItem(u);
+				}
+				locations = br.readLine();
+				location = new ArrayList<>(Arrays.asList(locations.split(",")));
+				location.add(0, "---Selcet---");
+				for(String u : location) {
+					location_box.addItem(u);
+				}
+				passwords = br.readLine();
+				password = new ArrayList<>(Arrays.asList(passwords.split(",")));
+				password.add(0, "---Selcet---");
+				for(String u : password) {
+					password_box.addItem(u);
+				}
 				br.close();
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -31,16 +86,86 @@ public class Call_vars {
 		} catch (FileNotFoundException e) {
 			return false;
 		}
-		return false;
+		
+		return true;
+	}
+	public void pick_user() {
+		switch(state) {
+		case 0://chose user
+			window.add(user_box);
+			user_box.setSize(150, 50);
+			user_box.setLocation(window.getWidth()/2-150/2-50, 100);
+			user_box.setVisible(true);
+			confirm_user.setSize(100,50);
+			confirm_user.setVisible(true);
+			confirm_user.addActionListener(this);
+			confirm_user.setLocation(user_box.getX()+150, user_box.getY());
+			window.add(confirm_user);
+			break;
+		case 1://chose location
+			window.add(location_box);
+			location_box.setSize(150, 50);
+			location_box.setLocation(window.getWidth()/2-150/2-50, 150);
+			location_box.setVisible(true);
+			confirm_location.setSize(100,50);
+			confirm_location.setVisible(true);
+			confirm_location.addActionListener(this);
+			confirm_location.setLocation(location_box.getX()+150, location_box.getY());
+			window.add(confirm_location);
+			break;
+		case 2://chose password
+			window.add(password_box);
+			password_box.setSize(150, 50);
+			password_box.setLocation(window.getWidth()/2-150/2-50, 200);
+			password_box.setVisible(true);
+			confirm_password.setSize(100,50);
+			confirm_password.setVisible(true);
+			confirm_password.addActionListener(this);
+			confirm_password.setLocation(password_box.getX()+150, password_box.getY());
+			window.add(confirm_password);
+			break;
+		case 3://end
+			break;
+
+		}
+
 	}
 	public void make_save() {
 		try {
 			bw = new BufferedWriter(new FileWriter("Saves.txt"));
-			//find a way to get this in a window.
+			bw.write("defaultUser");
+			bw.newLine();
+			bw.write("defaultLocation");
+			bw.newLine();
+			bw.write("defaultPassword");
+			bw.newLine();
 			bw.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
+	}
+	@Override
+	public void actionPerformed(ActionEvent e) {
+
+		if(e.getSource() == confirm_user && user_box.getSelectedItem() != "---Selcet---") {
+			user_name = (String) user_box.getSelectedItem();
+			state++;
+			pick_user();
+			window.repaint();
+		}
+		if(e.getSource() == confirm_location && location_box.getSelectedItem() != "---Selcet---") {
+			location_name = (String) location_box.getSelectedItem();
+			state++;
+			pick_user();
+			window.repaint();
+		}
+		if(e.getSource() == confirm_password && password_box.getSelectedItem() != "---Selcet---") {
+			password_name = (String) password_box.getSelectedItem();
+			state++;
+			Main.ss.load();
+			window.repaint();
+		}
+
 	}
 }
