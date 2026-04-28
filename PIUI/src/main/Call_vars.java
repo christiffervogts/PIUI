@@ -9,7 +9,8 @@ import java.util.*;
 import javax.swing.*;
 
 public class Call_vars implements ActionListener{
-	
+	SSH_Startup ss = new SSH_Startup();// make the SSH request to get acsess to the server
+
 	public String users;
 	public String locations;
 	public String passwords;
@@ -163,7 +164,7 @@ public class Call_vars implements ActionListener{
 		if(e.getSource() == confirm_password && password_box.getSelectedItem() != "---Selcet---") {
 			password_name = (String) password_box.getSelectedItem();
 			state++;
-			Main.ss.load();
+			ss.load_vars(user_name, location_name, password_name);
 			window.repaint();
 		}
 
