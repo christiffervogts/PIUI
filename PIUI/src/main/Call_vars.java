@@ -5,7 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
-
+import javax.crypto.*;
 import javax.swing.*;
 
 public class Call_vars implements ActionListener{
@@ -28,9 +28,12 @@ public class Call_vars implements ActionListener{
 	JButton confirm_user = new JButton("Confirm?");
 	JButton confirm_location = new JButton("Confirm?");
 	JButton confirm_password = new JButton("Confirm?");
+	JButton confirm_additon = new JButton("Confirm?");
 
-	JLabel ues = new JLabel("Pick a user");
-	
+	JTextField Username = new JTextField();
+	JTextField Local = new JTextField();
+	JTextField Password = new JTextField();
+
 	JComboBox<String> user_box = new JComboBox<>();
 	JComboBox<String> location_box = new JComboBox<>();
 	JComboBox<String> password_box = new JComboBox<>();
@@ -41,7 +44,8 @@ public class Call_vars implements ActionListener{
 	public Call_vars() {
 		opening_stuff();
 		if(!check_for_save()) {
-			make_save();
+			state = 3;
+			pick_user();
 		}
 		else {
 			pick_user();
@@ -90,6 +94,9 @@ public class Call_vars implements ActionListener{
 		
 		return true;
 	}
+	public void add_information(String User, String Location, String ) {
+		
+	}
 	public void pick_user() {
 		switch(state) {
 		case 0://chose user
@@ -125,26 +132,12 @@ public class Call_vars implements ActionListener{
 			confirm_password.setLocation(password_box.getX()+150, password_box.getY());
 			window.add(confirm_password);
 			break;
-		case 3://end
+		case 3://add person
+			username
 			break;
 
 		}
 
-	}
-	public void make_save() {
-		try {
-			bw = new BufferedWriter(new FileWriter("Saves.txt"));
-			bw.write("defaultUser");
-			bw.newLine();
-			bw.write("defaultLocation");
-			bw.newLine();
-			bw.write("defaultPassword");
-			bw.newLine();
-			bw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
 	}
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -155,17 +148,21 @@ public class Call_vars implements ActionListener{
 			pick_user();
 			window.repaint();
 		}
-		if(e.getSource() == confirm_location && location_box.getSelectedItem() != "---Selcet---") {
+		else if(e.getSource() == confirm_location && location_box.getSelectedItem() != "---Selcet---") {
 			location_name = (String) location_box.getSelectedItem();
 			state++;
 			pick_user();
 			window.repaint();
 		}
-		if(e.getSource() == confirm_password && password_box.getSelectedItem() != "---Selcet---") {
+		else if(e.getSource() == confirm_password && password_box.getSelectedItem() != "---Selcet---") {
 			password_name = (String) password_box.getSelectedItem();
 			state++;
+			window.dispose();
 			ss.load_vars(user_name, location_name, password_name);
-			window.repaint();
+		}
+		else if(e.getSource() == new_user) {
+			state = 3;
+			pick_user();
 		}
 
 	}
