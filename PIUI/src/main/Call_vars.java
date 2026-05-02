@@ -1,16 +1,22 @@
 package main;
 
 import java.awt.*;
+import java.awt.List;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
-import javax.crypto.*;
 import javax.swing.*;
+import java.util.Scanner;
 
 public class Call_vars implements ActionListener{
 	SSH_Startup ss = new SSH_Startup();// make the SSH request to get acsess to the server
-
+	NetworkInterface network;
+	byte[] mac;
 	public String users;
 	public String locations;
 	public String passwords;
@@ -30,10 +36,8 @@ public class Call_vars implements ActionListener{
 	JButton confirm_password = new JButton("Confirm?");
 	JButton confirm_additon = new JButton("Confirm?");
 
-	JTextField Username = new JTextField();
-	JTextField Local = new JTextField();
-	JTextField Password = new JTextField();
-
+	JLabel Text = new JLabel("Go To Consol");
+	
 	JComboBox<String> user_box = new JComboBox<>();
 	JComboBox<String> location_box = new JComboBox<>();
 	JComboBox<String> password_box = new JComboBox<>();
@@ -42,10 +46,14 @@ public class Call_vars implements ActionListener{
 	BufferedWriter bw;
 	
 	public Call_vars() {
+		networkVerification();
 		opening_stuff();
 		if(!check_for_save()) {
 			state = 3;
 			pick_user();
+			state = 1;
+			check_for_save();
+			window.repaint();
 		}
 		else {
 			pick_user();
@@ -53,37 +61,48 @@ public class Call_vars implements ActionListener{
 		}
 	}
 	public void opening_stuff() {
+		networkVerification();
 		window.setSize(Toolkit.getDefaultToolkit().getScreenSize().width/2, Toolkit.getDefaultToolkit().getScreenSize().height/2);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		window.setLocationRelativeTo(null);
 		window.setResizable(false);
 		window.setLayout(null);
 		window.setVisible(true);
+		
+		window.add(new_user);
+		new_user.setSize(200, 50);
+		new_user.setLocation(window.getWidth()/2-100, 340);
+		new_user.setVisible(true);
+		new_user.addActionListener(this);
 	}
 	public boolean check_for_save() {
-		
+		networkVerification();
 		try {
-			br = new BufferedReader(new FileReader("Saves.txt"));
-			
+			br = new BufferedReader(new FileReader("Saves.piui"));
 			try {
+				br.mark(1000);
+				if(br.readLine() == null) {
+					return false;
+				}
+				br.reset();
 				users = br.readLine();
 				user = new ArrayList<>(Arrays.asList(users.split(",")));
-				user.add(0, "---Selcet---");
 				for(String u : user) {
-				    user_box.addItem(u);
+					user_box.addItem(decrypt(u));
 				}
+				user.add(0, "---Selcet---");
 				locations = br.readLine();
 				location = new ArrayList<>(Arrays.asList(locations.split(",")));
-				location.add(0, "---Selcet---");
 				for(String u : location) {
-					location_box.addItem(u);
+					location_box.addItem(decrypt(u));
 				}
+				location.add(0, "---Selcet---");
 				passwords = br.readLine();
 				password = new ArrayList<>(Arrays.asList(passwords.split(",")));
-				password.add(0, "---Selcet---");
 				for(String u : password) {
-					password_box.addItem(u);
+					password_box.addItem(decrypt(u));
 				}
+				password.add(0, "---Selcet---");
 				br.close();
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -94,10 +113,89 @@ public class Call_vars implements ActionListener{
 		
 		return true;
 	}
-	public void add_information(String User, String Location, String ) {
-		
+	public void networkVerification() {
+        
+        
+		try {
+			InetAddress ip = InetAddress.getLocalHost(); 
+			network = NetworkInterface.getByInetAddress(ip);
+			mac = network.getHardwareAddress();
+		} catch (SocketException | UnknownHostException e) {
+			e.printStackTrace();
+		}
+        
+
 	}
+	public String encrypt(String input) {
+	    char[] output_chars = input.toCharArray();
+	    
+	    for (int i = 0; i < mac.length; i++) {
+	        for (int j = 0; j < output_chars.length; j++) {
+	            if (i % 2 == 0) {
+	                output_chars[j] += mac[i];
+	            } else {
+	                output_chars[j] -= mac[i];
+	            }
+	        }
+	    }
+	    
+	    byte[] bytes = new String(output_chars).getBytes(StandardCharsets.UTF_16BE);
+	    String output = HexFormat.of().formatHex(bytes);
+	    System.out.println(output);
+	    return output;
+	}
+	public String decrypt(String input) {
+		byte[] bytes = HexFormat.of().parseHex(input);
+		String result = new String(bytes, StandardCharsets.UTF_16BE);
+		char[] output_chars = result.toCharArray();
+	    
+	    for (int i = mac.length - 1; i >= 0; i--) {
+	        for (int j = 0; j < output_chars.length; j++) {
+	            if (i % 2 == 0) {
+	                output_chars[j] -= mac[i];
+	            } else {
+	                output_chars[j] += mac[i];
+	         }
+	        }
+	    }
+	    
+	    String output = new String(output_chars);
+	    System.out.println(output);
+	    return output;
+	}
+	public void add_information(String User, String Location, String password) {
+	    String[] newData = { User, Location, password };
+	    String filePath = "Saves.piui";
+	
+	    java.util.List<String> existingLines = new ArrayList<>();
+	    File file = new File(filePath);
+	    if (file.exists()) {
+	        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+	            String line;
+	            while ((line = br.readLine()) != null) {
+	                existingLines.add(line);
+	            }
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
+	
+	    try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath))) {
+	        for (int i = 0; i < 3; i++) {
+	            String existing = i < existingLines.size() ? existingLines.get(i) : null;
+	            if (existing == null) {
+	                bw.write(newData[i]);
+	            } else {
+	                bw.write(existing + newData[i]);
+	            }
+	            bw.newLine();
+	        }
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+	}	
 	public void pick_user() {
+		networkVerification();
 		switch(state) {
 		case 0://chose user
 			window.add(user_box);
@@ -133,7 +231,27 @@ public class Call_vars implements ActionListener{
 			window.add(confirm_password);
 			break;
 		case 3://add person
-			username
+			
+			window.getContentPane().removeAll();			
+		    Scanner myObj = new Scanner(System.in);
+		    
+		    System.out.println("Enter username");
+		    String userName = myObj.nextLine(); 
+		    System.out.println("Username is: " + userName);
+		    
+		    System.out.println("Enter Location");
+		    String Location = myObj.nextLine();
+		    System.out.println("Location: " + Location);
+		    
+		    System.out.println("Enter Password");
+		    String PassWord = myObj.nextLine();
+		    System.out.println("Location: " + PassWord);
+
+		    userName = encrypt(userName);
+		    Location = encrypt(Location);
+		    PassWord = encrypt(PassWord);
+
+		    add_information(userName, Location, PassWord);
 			break;
 
 		}
@@ -161,6 +279,8 @@ public class Call_vars implements ActionListener{
 			ss.load_vars(user_name, location_name, password_name);
 		}
 		else if(e.getSource() == new_user) {
+			System.out.println("Hello");
+
 			state = 3;
 			pick_user();
 		}
